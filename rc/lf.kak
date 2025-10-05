@@ -2,7 +2,7 @@ declare-option -hidden -docstring "id of currently active lf instance" str lf_id
 declare-option -hidden str lf_tmp_file
 declare-option -hidden str lf_start_dir
 
-declare-option -docstring "List of regexes, that will be matched against a file's mimetype before opening" str-list lf_openables 'text/.*' 'application/json'
+declare-option -docstring "List of regexes, that will be matched against a file's mimetype before opening" str-list lf_openables 'text/.*' 'application/x-shellscript' 'application/json' 'application/javascript'
 declare-option -docstring 'Should lf jump to the file opened in kakoune' bool lf_follow false
 
 declare-option -hidden str lf_config %sh{

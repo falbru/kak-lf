@@ -5,7 +5,7 @@ declare-option -hidden str lf_start_dir
 declare-option -docstring "List of regexes, that will be matched against a file's mimetype before opening" str-list lf_openables 'text/.*' 'application/x-shellscript' 'application/json' 'application/javascript'
 declare-option -docstring 'Should lf jump to the file opened in kakoune' bool lf_follow false
 
-declare-option -hidden str lf_config %sh{
+declare-option -docstring "Configuration for lf opened in kakoune" str lf_config %sh{
 echo '
 cmd kak-exit-hook &{{
     echo "eval -client $kak_client set-option global lf_id none" | kak -p "$kak_session"
@@ -34,8 +34,6 @@ set nopreview
 set ratios 1
 cmd open :kak-edit
 map q :kak-exit-hook
-
-echo eval -client $kak_client set-option global lf_id $id | kak -p $kak_session
 '
 }
 
@@ -97,15 +95,14 @@ define-command -hidden lf-spawn-new %{
     evaluate-commands %sh{
         tmp="$(mktemp ${TMPDIR:-/tmp}/kaklf.XXXXXXXXX)"
         printf "set-option global lf_tmp_file '%s'\n" "$tmp"
-        printf '%s\n' "$kak_opt_lf_config" > $tmp
+        printf '%s\n%s\n' "$kak_opt_lf_config" "\$echo eval -client $kak_client set-option global lf_id \$id | kak -p $kak_session" > $tmp
     }
 
     terminal sh -c "env kak_session=%val{session} kak_client=%val{client} lf -command ""source %opt{lf_tmp_file}"" ""%opt{lf_start_dir}"""
-}
-
-hook -group lf global GlobalSetOption 'lf_id=\d+' %{
-    nop %sh{
-        rm "$kak_opt_lf_tmp_file"
+    hook -once -group lf global GlobalSetOption 'lf_id=\d+' %{
+        nop %sh{
+            rm "$kak_opt_lf_tmp_file"
+        }
     }
 }
 
@@ -114,7 +111,7 @@ define-command -hidden lf-send-command \
     -docstring 'send command to currently attached lf instance' %{
     evaluate-commands %sh{
         if [ -n "$kak_opt_lf_id" ]; then
-            lf -remote "send $kak_opt_lf_id $*"
+            lf -remote "send $kak_opt_lf_id :$*"
         else
             echo fail "No lf session attached"
         fi
